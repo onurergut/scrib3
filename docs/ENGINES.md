@@ -49,6 +49,12 @@ available from macOS 26.
   step.
 - A 3-minute file produced three 60-second results with global timestamps.
 
+The automated integration suite uses WAV fixtures. A manual probe during
+development also covered a 44.1 kHz AAC track inside an MP4. Other containers
+(MOV, M4A, MP3, and the rest of AVFoundation's readable formats) use the same
+`AVAudioFile` and `AVAudioConverter` path but are not each covered by an
+automated fixture.
+
 These lists are runtime values and can change with macOS updates. The app always
 reads them from the framework.
 

@@ -91,7 +91,7 @@ scrib3 ships with two transcription backends behind one protocol.
 | Engine | Model | Download | Best for |
 |---|---|---|---|
 | **Apple Speech** (default) | `SpeechTranscriber` where Apple supports the locale; `DictationTranscriber` fallback elsewhere, including Turkish | Managed by macOS, downloaded once | Long-form audio, 45+ locales, zero third-party dependency |
-| **WhisperKit** | OpenAI Whisper large-v3, Core ML | 626 MB once from Hugging Face | Turkish punctuation and capitalization, 99 languages, higher accuracy |
+| **WhisperKit** | OpenAI Whisper large-v3, Core ML | 626 MB once from Hugging Face | Turkish punctuation and capitalization, 99 languages |
 
 **Honest model download:** Apple's speech assets are downloaded by macOS the
 first time a language is used, then shared between apps and retained by the
