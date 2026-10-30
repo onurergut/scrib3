@@ -19,8 +19,8 @@ concurrency:
 jobs:
   release:
     name: Sign, notarize, publish
-    # Set repository secrets and the RELEASE_AUTOMATION variable after the
-    # first manual release; until then a tag push does not fail the pipeline.
+    # Set release-environment secrets and the RELEASE_AUTOMATION variable.
+    # The environment requires reviewer approval before secrets are exposed.
     if: vars.RELEASE_AUTOMATION == 'true'
     environment: release
     runs-on: macos-26

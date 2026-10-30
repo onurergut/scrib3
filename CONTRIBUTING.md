@@ -131,7 +131,10 @@ architectures, signs with a Developer ID certificate, notarizes, staples,
 verifies, and publishes a GitHub release. It runs on a `v*` tag or by manual
 dispatch.
 
-Configure these repository secrets first:
+Configure these as **environment secrets** on the `release` environment. The
+release job runs inside that environment, and the environment requires a
+reviewer, so a tag or manual dispatch waits for approval before the signing
+secrets become available:
 
 | Secret | Contents |
 |---|---|
@@ -147,12 +150,17 @@ variable is set, tag pushes do not start the signing job, so a release can be
 prepared manually without a red workflow. Seeded certificates expire; replace
 the secret before expiry.
 
+The environment rule allows the maintainer to approve their own deployment by
+default and lets repository admins bypass it. For a hard two-person gate, add a
+second reviewer and enable “Prevent self-review” in the environment settings.
+
 To encode the certificate locally:
 
 ```sh
 base64 -i DeveloperID.p12 | pbcopy
-gh secret set DEVELOPER_ID_APPLICATION_P12
+gh secret set DEVELOPER_ID_APPLICATION_P12 --env release
 ```
+
 
 CI runs build, unit tests, and ad-hoc packaging for both architectures on every
 push and pull request. GitHub's hosted macOS runners do not expose the Speech
