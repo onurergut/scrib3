@@ -92,6 +92,7 @@ public actor WhisperKitEngine: TranscriptionEngine {
         }
 
         try await prepare(locale: locale, progress: progress)
+        try Task.checkCancellation()
         guard let pipeline else {
             throw TranscriptionError.preparationFailed("The model is not loaded.")
         }
@@ -107,7 +108,10 @@ public actor WhisperKitEngine: TranscriptionEngine {
         do {
             results = try await pipeline.transcribe(
                 audioPath: file.path,
-                decodeOptions: options
+                decodeOptions: options,
+                callback: { _ in
+                    Task.isCancelled ? false : nil
+                }
             )
         } catch {
             throw TranscriptionError.audioReadFailed(error.localizedDescription)

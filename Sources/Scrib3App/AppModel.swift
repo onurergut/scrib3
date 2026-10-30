@@ -95,7 +95,7 @@ final class AppModel {
     }
 
     var canExportSelection: Bool {
-        selectedEntry?.status == .finished && !transcriptCues.isEmpty
+        selectedEntry?.status == .finished
     }
 
     var currentEngine: any TranscriptionEngine {

@@ -41,6 +41,9 @@
   support varies; WhisperKit may be the practical engine there.
 - WhisperKit full-file transcription loads the audio track into memory. A
   multi-hour recording needs a lot of free RAM.
+- The first WhisperKit load specializes the Core ML model. This took several
+  minutes on the test machine and is shown as “Preparing model…”; later loads
+  are much faster.
 
 ## Subtitles
 
@@ -59,5 +62,10 @@
   can register the service.
 - Cancelling stops the current file and marks queued files as cancelled. They
   are not resumed automatically; add them again or retry failures.
+- Cancelling during the very first WhisperKit model download stops the UI, but
+  the download already in flight may finish in the background. WhisperKit stops
+  decoding at the next check; a window already being decoded may finish first.
+- WhisperKit keeps the model loaded after first use until the app quits, so
+  memory stays higher after the first WhisperKit transcription.
 - There is no automatic updater in 0.1.0. Releases are manual downloads.
 - The interface is English. Transcripts follow the spoken language.

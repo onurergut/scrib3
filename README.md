@@ -133,7 +133,9 @@ which is unavoidable for a download.
 - **Apple's Turkish fallback has no punctuation or capitalization** and chunks
   results at about 60 seconds. WhisperKit is the recommended engine for Turkish.
 - **WhisperKit loads the audio track into memory** for full-file transcription.
-  Very long recordings need corresponding free memory.
+  Very long recordings need corresponding free memory. The first model load also
+  spends time specializing the Core ML model; on a test machine this took
+  several minutes, and later launches are much faster.
 - **First use needs network access** for the selected engine's model.
 - **Intel Macs** can run scrib3 on macOS 26, but `SpeechTranscriber`
   availability depends on the hardware; the Dictation fallback covers more

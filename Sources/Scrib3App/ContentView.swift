@@ -313,7 +313,6 @@ private struct QueueRow: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .disabled(entry.status != .finished)
 
             Button {
                 model.remove(entry.id)
@@ -324,6 +323,7 @@ private struct QueueRow: View {
             .buttonStyle(.plain)
             .foregroundStyle(.tertiary)
             .help("Remove")
+            .disabled(entry.status == .running)
         }
         .padding(8)
         .background(

@@ -182,6 +182,16 @@ public actor TranscriptionQueue {
         guard let index = entries.firstIndex(where: { $0.id == id }),
               entries[index].status == .running
         else { return }
+
+        if let current = entries[index].progress,
+           current.phase == progress.phase,
+           let previous = current.fraction,
+           let next = progress.fraction,
+           next < previous
+        {
+            return
+        }
+
         entries[index].progress = progress
         publish()
     }

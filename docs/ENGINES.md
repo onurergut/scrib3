@@ -98,7 +98,10 @@ multilingual Whisper large-v3 Core ML model.
   `Merhaba, bu bir alt yazı denemesidir.`
 
 WhisperKit loads the full audio into memory for full-file transcription. This is
-the main memory cost for very long recordings.
+the main memory cost for very long recordings. The first load in a new process
+also triggers Core ML specialization; measured time was several minutes for
+large-v3 on macOS 27, while subsequent loads were fast. The UI shows
+“Preparing model…” during this phase.
 
 ## Adding a third engine
 

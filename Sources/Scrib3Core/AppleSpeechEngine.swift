@@ -233,6 +233,7 @@ private actor AudioFeeder {
         let chunkFrames = AVAudioFrameCount(max(1, sourceFormat.sampleRate))
         let totalFrames = Double(file.length)
         var fedFrames: Double = 0
+        var readAnyFrames = false
 
         while !Task.isCancelled {
             guard let input = AVAudioPCMBuffer(
@@ -249,6 +250,7 @@ private actor AudioFeeder {
                 break
             }
             if input.frameLength == 0 { break }
+            readAnyFrames = true
 
             fedFrames += Double(input.frameLength)
 
@@ -293,6 +295,9 @@ private actor AudioFeeder {
         }
 
         try Task.checkCancellation()
+        if !readAnyFrames {
+            throw TranscriptionError.audioReadFailed("No audio frames could be read.")
+        }
     }
 
     private static func needsConversion(from source: AVAudioFormat, to target: AVAudioFormat) -> Bool {
