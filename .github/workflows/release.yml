@@ -22,10 +22,11 @@ jobs:
     # Set repository secrets and the RELEASE_AUTOMATION variable after the
     # first manual release; until then a tag push does not fail the pipeline.
     if: vars.RELEASE_AUTOMATION == 'true'
+    environment: release
     runs-on: macos-26
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
 

@@ -15,7 +15,7 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Toolchain
         run: |
@@ -60,7 +60,7 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Transcribe committed audio fixtures
         # macOS downloads its language assets on first use. File transcription
@@ -76,7 +76,7 @@ jobs:
       matrix:
         arch: [arm64, x86_64]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Build, sign ad-hoc, verify
         run: |
@@ -84,7 +84,7 @@ jobs:
           scripts/package.sh "${{ matrix.arch }}" "$VERSION" "${{ github.run_number }}"
 
       - name: Upload unsigned development package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: scrib3-${{ matrix.arch }}-${{ github.run_number }}
           path: |
