@@ -43,7 +43,7 @@ public actor TranscriptionQueue {
     }
 
     public private(set) var entries: [Entry] = []
-    public let updates: AsyncStream<[Entry]>
+    public nonisolated let updates: AsyncStream<[Entry]>
 
     private let executor: Executor
     private let updatesContinuation: AsyncStream<[Entry]>.Continuation
