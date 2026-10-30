@@ -2,8 +2,6 @@
 build/
 .swiftpm/
 dist/
-.claude/
-.agents/
 DerivedData/
 *.xcodeproj
 *.xcworkspace
