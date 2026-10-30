@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: |
+          swift --version
+          xcodebuild -version
+
+      - name: Build
+        run: swift build
+
+      - name: Test
+        # Integration suites are opt-in; this runs the UI-free core and app
+        # target tests without downloading any models.
+        run: swift test --enable-code-coverage
+
+      - name: Speech integration
+        # Uses the real Speech framework. macOS downloads its language assets on
+        # the first run; file transcription needs no audio hardware.
+        run: SCRIB3_INTEGRATION=1 swift test --filter AppleSpeechIntegration
+
+      - name: Shell scripts parse
+        run: |
+          for script in scripts/*.sh; do bash -n "$script"; done
+
+      - name: Coverage summary
+        # Report only — no threshold, so the build never fails on a number.
+        run: |
+          BIN_PATH=$(swift build --show-bin-path)
+          for target in Scrib3CoreTests Scrib3AppTests; do
+            xcrun llvm-cov report \
+              "$BIN_PATH/$target.xctest/Contents/MacOS/$target" \
+              -instr-profile "$BIN_PATH/codecov/default.profdata" \
+              Sources Tests
+          done

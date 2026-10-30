@@ -1,0 +1,34 @@
+scrib3 third-party notices
+
+scrib3's own code is MIT licensed (see LICENSE).
+
+WhisperKit
+----------
+https://github.com/argmaxinc/WhisperKit
+Copyright (c) 2024 Argmax, Inc.
+License: MIT
+
+The full text is bundled in the app at
+Contents/Resources/licenses/WhisperKit-LICENSE.
+
+swift-argument-parser
+---------------------
+https://github.com/apple/swift-argument-parser
+Copyright (c) 2019 Apple Inc.
+License: Apache License 2.0 with Runtime Library Exception
+
+The full text is bundled in the app at
+Contents/Resources/licenses/swift-argument-parser-LICENSE.
+
+Whisper model weights
+---------------------
+The optional WhisperKit engine downloads the OpenAI Whisper large-v3 Core ML
+conversion from Hugging Face (argmaxinc/whisperkit-coreml) at runtime. The
+model is not part of this repository or the app bundle. OpenAI releases the
+Whisper models under the MIT license.
+
+Apple frameworks
+----------------
+Speech, AVFoundation, AVKit, CoreML and related system frameworks are provided
+by macOS and governed by Apple's software license terms. Apple's speech assets
+are downloaded and managed by the system.
