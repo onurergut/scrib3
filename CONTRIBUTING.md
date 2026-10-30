@@ -154,8 +154,12 @@ base64 -i DeveloperID.p12 | pbcopy
 gh secret set DEVELOPER_ID_APPLICATION_P12
 ```
 
-CI runs build, unit tests, the Apple Speech integration suite, and ad-hoc
-packaging for both architectures on every push and pull request.
+CI runs build, unit tests, and ad-hoc packaging for both architectures on every
+push and pull request. GitHub's hosted macOS runners do not expose the Speech
+language assets, so the Apple Speech integration job is gated behind the
+repository variable `SPEECH_INTEGRATION`; set it to `true` on a runner with a
+real Speech stack. The integration suite is always runnable locally with
+`SCRIB3_INTEGRATION=1`.
 
 There is no automatic updater in 0.1.0. Users download releases manually.
 

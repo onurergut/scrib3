@@ -264,19 +264,19 @@ private actor AudioFeeder {
                     throw TranscriptionError.audioReadFailed("Out of memory while converting audio.")
                 }
 
-                var suppliedInput = false
+                let box = ConversionInput(input)
                 var conversionError: NSError?
                 let status = converter.convert(
                     to: output,
                     error: &conversionError
                 ) { _, outStatus in
-                    if suppliedInput {
+                    if box.supplied {
                         outStatus.pointee = .noDataNow
                         return nil
                     }
-                    suppliedInput = true
+                    box.supplied = true
                     outStatus.pointee = .haveData
-                    return input
+                    return box.buffer
                 }
 
                 if status == .error {
@@ -305,5 +305,16 @@ private actor AudioFeeder {
             || source.channelCount != target.channelCount
             || source.commonFormat != target.commonFormat
             || source.isInterleaved != target.isInterleaved
+    }
+}
+
+/// AVAudioConverter calls its input block synchronously; this box keeps the
+/// mutable hand-off out of a `@Sendable` capture.
+private final class ConversionInput: @unchecked Sendable {
+    let buffer: AVAudioPCMBuffer
+    var supplied = false
+
+    init(_ buffer: AVAudioPCMBuffer) {
+        self.buffer = buffer
     }
 }

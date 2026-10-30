@@ -36,16 +36,27 @@ jobs:
         # Report only — no threshold, so a refactor never fails on a number.
         run: |
           BIN_PATH=$(swift build --show-bin-path)
-          for target in Scrib3CoreTests Scrib3AppTests; do
+          PROFILE=$(find .build -name default.profdata -print -quit)
+          found=0
+          while IFS= read -r -d '' bundle; do
+            target=$(basename "$bundle" .xctest)
+            executable="$bundle/Contents/MacOS/$target"
+            [[ -x "$executable" ]] || continue
+            found=1
             echo "== $target =="
-            xcrun llvm-cov report \
-              "$BIN_PATH/$target.xctest/Contents/MacOS/$target" \
-              -instr-profile "$BIN_PATH/codecov/default.profdata" \
-              Sources Tests
-          done
+            xcrun llvm-cov report "$executable" \
+              -instr-profile "$PROFILE" Sources Tests || true
+          done < <(find "$BIN_PATH" -maxdepth 2 -name '*.xctest' -print0)
+          if [[ "$found" -eq 0 ]]; then
+            echo "No test bundles found; skipping the coverage report."
+          fi
 
   speech-integration:
     name: Apple Speech integration
+    # Hosted macOS runners do not expose the Speech language assets. Run this
+    # job on a runner with a real Speech stack by setting the repository
+    # variable SPEECH_INTEGRATION=true.
+    if: vars.SPEECH_INTEGRATION == 'true'
     runs-on: macos-26
     timeout-minutes: 30
     steps:
