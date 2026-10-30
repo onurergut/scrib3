@@ -40,5 +40,5 @@ spctl -a -vvv -t exec "$APP"
 
 echo "==> Re-zipping the stapled app next to it ..."
 ditto -c -k --keepParent --norsrc "$APP" "$OUT"
-shasum -a 256 "$OUT" | awk '{print $1}' > "$OUT.sha256"
+(cd "$PARENT" && shasum -a 256 "$(basename "$OUT")" > "$(basename "$OUT").sha256")
 echo "Notarized package: $OUT"

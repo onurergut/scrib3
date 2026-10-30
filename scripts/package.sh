@@ -88,8 +88,7 @@ CONTENTS="$OUTROOT/$APP_NAME.app"
 
 printf '==> Zipping...\n'
 ditto -c -k --keepParent --norsrc "$CONTENTS" "$ARCHIVE"
-DIGEST="$(shasum -a 256 "$ARCHIVE")"
-printf '%s\n' "${DIGEST%% *}" > "$ARCHIVE.sha256"
+(cd "$OUTROOT" && shasum -a 256 "$(basename "$ARCHIVE")" > "$(basename "$ARCHIVE").sha256")
 
 bash "$ROOT/scripts/verify-release.sh" "$CONTENTS" "$VERSION" "$ARCH" --development "$BUILD_NUMBER"
 

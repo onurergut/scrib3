@@ -74,7 +74,7 @@ codesign --verify --deep --strict --verbose=2 "$APP" || fail 'Code signature ver
 if [[ "$MODE" == "release" ]]; then
     spctl -a -vvv -t exec "$APP" || fail 'Gatekeeper rejected the app (not notarized?)'
     require_file "$ARCHIVE"
-    EXPECTED="$(cat "$ARCHIVE.sha256" 2>/dev/null || true)"
+    EXPECTED="$(/usr/bin/awk '{print $1}' "$ARCHIVE.sha256" 2>/dev/null || true)"
     ACTUAL="$(shasum -a 256 "$ARCHIVE" | /usr/bin/awk '{print $1}')"
     [[ -n "$EXPECTED" && "$EXPECTED" == "$ACTUAL" ]] || fail 'Archive checksum mismatch'
 fi
