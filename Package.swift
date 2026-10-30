@@ -10,9 +10,13 @@ let package = Package(
         .library(name: "Scrib3Core", targets: ["Scrib3Core"]),
         .executable(name: "scrib3", targets: ["Scrib3App"]),
     ],
+    dependencies: [
+        .package(url: "https://github.com/argmaxinc/WhisperKit.git", exact: "1.1.1"),
+    ],
     targets: [
         .target(
             name: "Scrib3Core",
+            dependencies: [.product(name: "WhisperKit", package: "WhisperKit")],
             swiftSettings: swiftSettings
         ),
         .executableTarget(

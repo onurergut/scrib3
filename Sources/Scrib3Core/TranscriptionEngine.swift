@@ -59,6 +59,7 @@ public enum TranscriptionError: Error, LocalizedError, Equatable, Sendable {
     case notAMediaFile(String)
     case audioReadFailed(String)
     case assetDownloadFailed(String)
+    case preparationFailed(String)
 
     public var errorDescription: String? {
         switch self {
@@ -72,6 +73,8 @@ public enum TranscriptionError: Error, LocalizedError, Equatable, Sendable {
             "The audio could not be read: \(message)"
         case .assetDownloadFailed(let message):
             "The language model could not be downloaded: \(message)"
+        case .preparationFailed(let message):
+            "The language model could not be prepared: \(message)"
         }
     }
 }
