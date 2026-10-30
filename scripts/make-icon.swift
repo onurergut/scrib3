@@ -69,8 +69,9 @@ func drawIcon(size: CGFloat) -> NSBitmapImageRep {
     shadow.set()
 
     let gradient = NSGradient(colors: [
-        color(0x4338CA),
+        color(0x312E81),
         color(0x4F46E5),
+        color(0x0891B2),
         color(0x0EA5B7),
     ])!
     gradient.draw(in: squircle, angle: -52)
@@ -78,21 +79,43 @@ func drawIcon(size: CGFloat) -> NSBitmapImageRep {
     NSGraphicsContext.current?.saveGraphicsState()
     squircle.addClip()
 
-    // Soft top highlight.
-    let highlight = NSGradient(colors: [
-        NSColor.white.withAlphaComponent(0.22),
+    // Top-left light source.
+    let glow = NSGradient(colors: [
+        NSColor.white.withAlphaComponent(0.24),
         NSColor.white.withAlphaComponent(0.0),
     ])!
-    highlight.draw(
+    glow.draw(
+        in: NSBezierPath(
+            ovalIn: NSRect(
+                x: bounds.minX - bounds.width * 0.25,
+                y: bounds.midY,
+                width: bounds.width * 1.1,
+                height: bounds.height * 0.95
+            )
+        ),
+        relativeCenterPosition: NSPoint(x: -0.15, y: 0.15)
+    )
+
+    // Bottom edge shading.
+    let shade = NSGradient(colors: [
+        NSColor.black.withAlphaComponent(0.16),
+        NSColor.black.withAlphaComponent(0.0),
+    ])!
+    shade.draw(
         in: NSRect(
             x: bounds.minX,
-            y: bounds.midY,
+            y: bounds.minY,
             width: bounds.width,
-            height: bounds.height / 2
+            height: bounds.height * 0.35
         ),
-        angle: -90
+        angle: 90
     )
     NSGraphicsContext.current?.restoreGraphicsState()
+
+    // A hairline edge keeps the silhouette crisp on light backgrounds.
+    NSColor.white.withAlphaComponent(0.18).setStroke()
+    squircle.lineWidth = 2.5 * scale
+    squircle.stroke()
 
     let white = NSColor.white
 

@@ -1,0 +1,144 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version without the v prefix (for example 0.1.0)"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Sign, notarize, publish
+    # Set repository secrets and the RELEASE_AUTOMATION variable after the
+    # first manual release; until then a tag push does not fail the pipeline.
+    if: vars.RELEASE_AUTOMATION == 'true'
+    runs-on: macos-26
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: version
+        run: |
+          RAW="${{ inputs.version || github.ref_name }}"
+          VERSION="${RAW#v}"
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+            echo "::error::Version must be x.y.z, got: $VERSION"
+            exit 1
+          }
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "build=$GITHUB_RUN_NUMBER" >> "$GITHUB_OUTPUT"
+
+      - name: Check release secrets
+        env:
+          CERTIFICATE: ${{ secrets.DEVELOPER_ID_APPLICATION_P12 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.DEVELOPER_ID_APPLICATION_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: |
+          missing=0
+          for name in CERTIFICATE CERTIFICATE_PASSWORD KEYCHAIN_PASSWORD APPLE_ID APPLE_TEAM_ID APPLE_APP_PASSWORD; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing secret mapped to $name"
+              missing=1
+            fi
+          done
+          if [[ "$missing" -ne 0 ]]; then
+            echo "Configure the release secrets documented in CONTRIBUTING.md."
+            exit 1
+          fi
+
+      - name: Import Developer ID certificate
+        env:
+          CERTIFICATE: ${{ secrets.DEVELOPER_ID_APPLICATION_P12 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.DEVELOPER_ID_APPLICATION_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          echo "$CERTIFICATE" | base64 -D > certificate.p12
+          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security import certificate.p12 -k build.keychain \
+            -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PASSWORD" build.keychain > /dev/null
+          rm -f certificate.p12
+          security find-identity -v -p codesigning build.keychain
+
+      - name: Store notary credentials
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: |
+          xcrun notarytool store-credentials scrib3-profile \
+            --apple-id "$APPLE_ID" \
+            --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_APP_PASSWORD"
+
+      - name: Build, sign, and notarize both architectures
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          BUILD_NUMBER: ${{ steps.version.outputs.build }}
+        run: |
+          set -euo pipefail
+          IDENTITY="$(security find-identity -v -p codesigning build.keychain \
+            | sed -n 's/.*"\(Developer ID Application:.*\)"/\1/p' | head -1)"
+          [[ -n "$IDENTITY" ]] || { echo "::error::No Developer ID Application identity"; exit 1; }
+          echo "Signing with: $IDENTITY"
+
+          for ARCH in arm64 x86_64; do
+            folder="$([ "$ARCH" = arm64 ] && echo apple-silicon || echo intel)"
+            CODESIGN_IDENTITY="$IDENTITY" \
+              scripts/package.sh "$ARCH" "$VERSION" "$BUILD_NUMBER"
+            NOTARY_PROFILE=scrib3-profile \
+              scripts/notarize.sh "dist/scrib3-$VERSION-$folder/scrib3.app"
+            scripts/verify-release.sh \
+              "dist/scrib3-$VERSION-$folder/scrib3.app" \
+              "$VERSION" "$ARCH" release "$BUILD_NUMBER"
+          done
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          files=(
+            "dist/scrib3-$VERSION-apple-silicon/scrib3-$VERSION-apple-silicon.zip"
+            "dist/scrib3-$VERSION-apple-silicon/scrib3-$VERSION-apple-silicon.zip.sha256"
+            "dist/scrib3-$VERSION-intel/scrib3-$VERSION-intel.zip"
+            "dist/scrib3-$VERSION-intel/scrib3-$VERSION-intel.zip.sha256"
+          )
+          for file in "${files[@]}"; do
+            [[ -s "$file" ]] || { echo "::error::Missing release asset: $file"; exit 1; }
+          done
+
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" "${files[@]}" --clobber
+          else
+            gh release create "$TAG" "${files[@]}" \
+              --title "scrib3 $VERSION" \
+              --generate-notes
+          fi
+
+      - name: Remove signing keychain
+        if: always()
+        run: security delete-keychain build.keychain 2>/dev/null || true

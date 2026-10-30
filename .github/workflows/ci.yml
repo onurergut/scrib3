@@ -5,9 +5,15 @@ on:
     branches: [main]
   pull_request:
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build-and-test:
+  test:
+    name: Build and unit tests
     runs-on: macos-26
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -19,27 +25,59 @@ jobs:
       - name: Build
         run: swift build
 
-      - name: Test
-        # Integration suites are opt-in; this runs the UI-free core and app
-        # target tests without downloading any models.
+      - name: Unit tests
         run: swift test --enable-code-coverage
-
-      - name: Speech integration
-        # Uses the real Speech framework. macOS downloads its language assets on
-        # the first run; file transcription needs no audio hardware.
-        run: SCRIB3_INTEGRATION=1 swift test --filter AppleSpeechIntegration
 
       - name: Shell scripts parse
         run: |
           for script in scripts/*.sh; do bash -n "$script"; done
 
       - name: Coverage summary
-        # Report only — no threshold, so the build never fails on a number.
+        # Report only — no threshold, so a refactor never fails on a number.
         run: |
           BIN_PATH=$(swift build --show-bin-path)
           for target in Scrib3CoreTests Scrib3AppTests; do
+            echo "== $target =="
             xcrun llvm-cov report \
               "$BIN_PATH/$target.xctest/Contents/MacOS/$target" \
               -instr-profile "$BIN_PATH/codecov/default.profdata" \
               Sources Tests
           done
+
+  speech-integration:
+    name: Apple Speech integration
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Transcribe committed audio fixtures
+        # macOS downloads its language assets on first use. File transcription
+        # does not need audio hardware.
+        run: SCRIB3_INTEGRATION=1 swift test --filter AppleSpeechIntegration
+
+  package:
+    name: Package ${{ matrix.arch }}
+    runs-on: macos-26
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [arm64, x86_64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build, sign ad-hoc, verify
+        run: |
+          VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Resources/Info.plist)
+          scripts/package.sh "${{ matrix.arch }}" "$VERSION" "${{ github.run_number }}"
+
+      - name: Upload unsigned development package
+        uses: actions/upload-artifact@v4
+        with:
+          name: scrib3-${{ matrix.arch }}-${{ github.run_number }}
+          path: |
+            dist/**/*.zip
+            dist/**/*.zip.sha256
+          if-no-files-found: error
+          retention-days: 14

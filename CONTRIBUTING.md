@@ -111,6 +111,9 @@ Then, after packaging:
 
 ```sh
 scripts/notarize.sh dist/scrib3-0.1.0-apple-silicon/scrib3.app
+
+# If the credentials live under a different profile:
+NOTARY_PROFILE=my-profile scripts/notarize.sh dist/scrib3-0.1.0-apple-silicon/scrib3.app
 ```
 
 The script verifies the signature, submits, staples, checks Gatekeeper, and
@@ -120,6 +123,39 @@ rewrites the ZIP with its SHA-256 checksum. Publish that exact ZIP.
 service message, architecture, rpaths, linked libraries, signature, and archive
 checksum. Packaging runs it automatically in development mode; run it with the
 `release` mode (default) after notarization.
+
+### Automated release
+
+[`.github/workflows/release.yml`](.github/workflows/release.yml) builds both
+architectures, signs with a Developer ID certificate, notarizes, staples,
+verifies, and publishes a GitHub release. It runs on a `v*` tag or by manual
+dispatch.
+
+Configure these repository secrets first:
+
+| Secret | Contents |
+|---|---|
+| `DEVELOPER_ID_APPLICATION_P12` | Base64-encoded `.p12` containing the Developer ID Application certificate and private key |
+| `DEVELOPER_ID_APPLICATION_PASSWORD` | Password for that `.p12` |
+| `KEYCHAIN_PASSWORD` | Any temporary password for the runner keychain |
+| `APPLE_ID` | Apple ID used for notarization |
+| `APPLE_TEAM_ID` | Apple Developer team ID |
+| `APPLE_APP_PASSWORD` | App-specific password for notarytool |
+
+Then set the repository variable `RELEASE_AUTOMATION` to `true`. Until that
+variable is set, tag pushes do not start the signing job, so a release can be
+prepared manually without a red workflow. Seeded certificates expire; replace
+the secret before expiry.
+
+To encode the certificate locally:
+
+```sh
+base64 -i DeveloperID.p12 | pbcopy
+gh secret set DEVELOPER_ID_APPLICATION_P12
+```
+
+CI runs build, unit tests, the Apple Speech integration suite, and ad-hoc
+packaging for both architectures on every push and pull request.
 
 There is no automatic updater in 0.1.0. Users download releases manually.
 
