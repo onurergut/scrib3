@@ -23,6 +23,7 @@ let package = Package(
         .testTarget(
             name: "Scrib3CoreTests",
             dependencies: ["Scrib3Core"],
+            resources: [.copy("Fixtures")],
             swiftSettings: swiftSettings
         ),
         .testTarget(
